@@ -1,0 +1,247 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Decoraciones Navidad PTY 2026 · Admin</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>*{box-sizing:border-box}body{margin:0;font:15px system-ui;background:#f3f5f4;color:#173124}header{background:#32174d;color:#fff;padding:16px 4%;display:flex;justify-content:space-between;align-items:center;gap:15px}h1,h2,h3{margin-top:0}.wrap{max-width:1200px;margin:auto;padding:16px}.card{background:#fff;padding:16px;border-radius:14px;margin-bottom:14px;box-shadow:0 2px 10px #0001}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.sector{border:1px solid #ddd;border-radius:12px;padding:14px}.muted{color:#68736d;font-size:13px}button{border:0;border-radius:9px;padding:10px 13px;cursor:pointer;background:#32174d;color:#fff;font-weight:650}button.gray{background:#68736d}button.danger{background:#a32626}.sector-photo{width:100%;height:160px;object-fit:cover;border-radius:10px;margin-bottom:10px;background:#111}
+.element-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:14px}
+.element-card{border:1px solid #ddd;border-radius:12px;padding:12px;background:#fff}
+.element-photo{width:100%;height:170px;object-fit:contain;background:#000;border-radius:10px;margin-bottom:9px}
+.map-marker{width:52px;height:52px;border-radius:50%;position:relative;filter:drop-shadow(0 2px 5px #0008)}
+.marker-clip{position:absolute;inset:0;border-radius:50%;overflow:hidden;border:3px solid #fff;background:#32174d;display:flex;align-items:center;justify-content:center;font-size:26px}
+.marker-clip img{width:100%;height:100%;object-fit:cover}
+.leaflet-marker-icon:hover .map-marker{transform:scale(1.18);transition:.18s}
+.report{border-top:1px solid #ddd;padding:10px 0}.comment{border-top:1px solid #ddd;padding:10px 0}.rating{border-top:1px solid #ddd;padding:10px 0}.rating-stars{color:#d39b00;font-size:18px;letter-spacing:1px}
+.badge-alert{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:#c62828;color:#fff;font-weight:800;font-size:12px;margin-left:6px}.element-alert{display:inline-flex;align-items:center;gap:5px;background:#c62828;color:#fff;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:800;margin:4px 0 8px}
+.report-summary{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0 11px}.summary-pill{padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700}.summary-open{background:#fde8e8;color:#a51d1d}.summary-done{background:#e8f5ec;color:#176b38}.summary-total{background:#eee;color:#444}input,textarea{width:100%;padding:10px;margin:5px 0 12px;border:1px solid #ccc;border-radius:8px}#map{height:58vh;min-height:420px;border-radius:14px}dialog{width:min(620px,94%);border:0;border-radius:15px;padding:18px}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.hide{display:none!important}.badge{display:inline-block;background:#eee;border-radius:999px;padding:3px 8px;font-size:12px}#drawHelp{padding:10px;background:#f0ecf5;border-radius:9px;margin-bottom:10px}
+.map-report-badge{position:absolute;right:-6px;top:-7px;z-index:20;min-width:21px;height:21px;padding:0 5px;border-radius:999px;background:#d71920;color:#fff;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;line-height:1;box-shadow:0 2px 6px #0007;box-sizing:border-box}
+</style></head>
+<body><header><div><b>Decoraciones Navidad PTY 2026</b><div style="font-size:12px;opacity:.85">Administración</div></div><div id="topActions" class="row hide"><button onclick="openHeaderConfig()">Editar encabezado</button><button onclick="openPassword()">Cambiar contraseña</button><button class="gray" onclick="logout()">Salir</button></div></header>
+<main class="wrap"><section id="loginBox" class="card" style="max-width:430px;margin:50px auto"><h2>Ingreso administrativo</h2><label>Correo</label><input id="email" type="email"><label>Contraseña</label><input id="password" type="password"><button onclick="loginNow()">Ingresar</button><p id="loginMsg" class="muted"></p></section>
+<section id="app" class="hide"><div id="sectorListView"><div class="card"><div class="row" style="justify-content:space-between"><div><h2 style="margin:0">Sectores</h2><span class="muted">Creá sectores y definí su área directamente en el mapa.</span></div><button onclick="newSector()">+ Crear sector</button></div></div><div id="sectors" class="grid"></div></div>
+<div id="sectorEditView" class="hide"><div class="card"><div class="row"><button class="gray" onclick="backToSectors()">← Todos los sectores</button><h2 id="editorTitle" style="margin:0">Nuevo sector</h2></div></div><div class="card"><label>Nombre del sector</label><input id="sectorName"><label>Descripción</label><textarea id="sectorDesc" rows="3"></textarea>
+<label>Foto general del sector</label><input id="sectorPhoto" type="file" accept="image/*">
+<div id="sectorPhotoPreview"></div><div id="drawHelp"><b>Área del sector:</b> usá la herramienta de polígono o rectángulo. Esta área definirá también el encuadre inicial para los visitantes.</div><div id="map"></div><div class="row" style="margin-top:12px"><button onclick="saveSector()">Guardar sector</button><button class="gray" onclick="clearArea()">Borrar área dibujada</button></div></div></div>
+<div id="sectorManageView" class="hide"><div class="card"><div class="row"><button class="gray" onclick="backToSectors()">← Todos los sectores</button><div><h2 id="manageName" style="margin:0"></h2><span class="muted">Administración del sector</span></div></div></div><div class="card"><div id="sectorMap" style="height:50vh;min-height:380px;border-radius:14px"></div></div><div class="card"><div class="row" style="justify-content:space-between"><div><h2 style="margin:0">Elementos</h2><span class="muted">Decoraciones pertenecientes exclusivamente a este sector.</span></div><button onclick="openElement()">+ Agregar elemento</button></div><div id="elementList" class="element-list"></div></div>
+<div class="card"><h2>Actividad pública del sector</h2><div class="grid">
+<div><h3>⭐ Valoraciones</h3><div id="ratingsBox" class="muted">Sin valoraciones.</div></div>
+<div><h3>💬 Comentarios</h3><div id="commentsBox" class="muted">Sin comentarios.</div></div>
+<div><h3>⚠️ Reportes <span id="openReportsBadge" class="badge-alert hide">0</span></h3><div id="reportsBox" class="muted">Sin reportes.</div></div>
+</div></div></div></section></main>
+<dialog id="headerDlg"><h3>Editar encabezado público</h3>
+<label>Título</label><input id="headerTitle">
+<label>Subtítulo</label><input id="headerSubtitle">
+<label>Logo</label><input id="headerLogo" type="file" accept="image/*">
+<div id="headerLogoPreview"></div>
+<div class="row"><button onclick="saveHeaderConfig()">Guardar encabezado</button><button class="gray" onclick="headerDlg.close()">Cancelar</button></div></dialog>
+<dialog id="elementDlg"><h3 id="elementDlgTitle">Agregar elemento</h3>
+<label>Nombre</label><input id="elementName">
+<label>Código (opcional)</label><input id="elementCode">
+<label>Descripción</label><textarea id="elementDesc" rows="3"></textarea>
+<label>Foto</label><input id="elementPhoto" type="file" accept="image/*"><div id="elementPhotoPreview"></div>
+<p class="muted"><b>Ubicación:</b> cerrá este cuadro con “Elegir ubicación” y hacé clic en el mapa. Luego guardá.</p>
+<div class="row"><button onclick="chooseElementLocation()">Elegir ubicación</button><button onclick="saveElement()">Guardar elemento</button><button class="gray" onclick="elementDlg.close()">Cancelar</button></div></dialog>
+<dialog id="deleteElementDlg"><h3 id="deleteElementTitle">Eliminar elemento</h3><p>Se eliminarán también sus valoraciones, comentarios y reportes.</p><p><b>Escribí ELIMINAR para confirmar.</b></p><input id="deleteElementConfirm"><div class="row"><button class="danger" onclick="deleteElementNow()">Eliminar definitivamente</button><button class="gray" onclick="deleteElementDlg.close()">Cancelar</button></div></dialog>
+<dialog id="deleteSectorDlg"><h3 id="deleteSectorTitle">Eliminar sector</h3>
+<p>Esta acción eliminará el sector y toda la información asociada: elementos, valoraciones, comentarios y reportes.</p>
+<p><b>Escribí ELIMINAR para confirmar.</b></p>
+<input id="deleteConfirm" autocomplete="off" placeholder="ELIMINAR">
+<div class="row"><button class="danger" onclick="deleteSectorNow()">Eliminar definitivamente</button><button class="gray" onclick="deleteSectorDlg.close()">Cancelar</button></div></dialog>
+<dialog id="pwdDlg"><h3>Cambiar mi contraseña</h3><label>Nueva contraseña</label><input id="newPwd" type="password"><label>Confirmar contraseña</label><input id="newPwd2" type="password"><div class="row"><button onclick="changePassword()">Guardar</button><button class="gray" onclick="pwdDlg.close()">Cancelar</button></div></dialog>
+<script>
+const sb=supabase.createClient("https://hntfbtviyxhigxjhbwhy.supabase.co","sb_publishable_FADYkI8IP23NMUYEY96pLA_IfHWVTZ6");
+let sectorData=[],editingId=null,drawnLayer=null,map=null,drawGroup=null,sectorMap=null,deleteSectorId=null,currentSectorId=null,elements=[],elementMarkers=[],editingElementId=null,pendingElementLatLng=null,deleteElementId=null;
+const $=id=>document.getElementById(id);function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function loginNow(){let {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)return $('loginMsg').textContent=error.message;boot()}
+async function logout(){await sb.auth.signOut();location.reload()}async function boot(){let {data:{session}}=await sb.auth.getSession();if(!session)return;let {data:isAdmin,error}=await sb.rpc('es_admin');if(error||!isAdmin){await sb.auth.signOut();return alert('Usuario no autorizado.')} $('loginBox').classList.add('hide');$('app').classList.remove('hide');$('topActions').classList.remove('hide');loadSectors()}
+function openPassword(){$('newPwd').value='';$('newPwd2').value='';$('pwdDlg').showModal()}async function changePassword(){if($('newPwd').value.length<8)return alert('Usá al menos 8 caracteres.');if($('newPwd').value!==$('newPwd2').value)return alert('Las contraseñas no coinciden.');let {error}=await sb.auth.updateUser({password:$('newPwd').value});if(error)return alert(error.message);$('pwdDlg').close();alert('Contraseña actualizada correctamente.')}
+async function loadSectors(){let {data,error}=await sb.from('sectores').select('*').order('orden').order('nombre');if(error)return alert(error.message);sectorData=data||[];await loadSectorReportSummaries();renderSectors()}
+function renderSectors(){let e=$('sectors');e.innerHTML=sectorData.length?sectorData.map(s=>`<div class="sector">${s.imagen_url?`<img class="sector-photo" src="${esc(s.imagen_url)}" alt="">`:''}<h3>${esc(s.nombre)}</h3><p>${esc(s.descripcion||'Sin descripción')}</p><span class="badge">${s.activo?'Activo':'Inactivo'}</span>${sectorReportSummary(s)}<div class="row" style="margin-top:12px"><button onclick="manageSector('${s.id}')">Administrar</button><button class="gray" onclick="editSector('${s.id}')">Editar área/datos</button><button class="danger" onclick="openDeleteSector('${s.id}')">Eliminar sector</button></div></div>`).join(''):'<div class="card">Todavía no hay sectores. Creá el primero.</div>'}
+function showOnly(id){['sectorListView','sectorEditView','sectorManageView'].forEach(x=>$(x).classList.toggle('hide',x!==id))}
+function initEditorMap(){if(map){setTimeout(()=>map.invalidateSize(),50);return}map=L.map('map',{maxZoom:21}).setView([8.9824,-79.5199],13);const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxNativeZoom:19,maxZoom:21,attribution:'Imagery © Esri'}).addTo(map);const streets=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:21,attribution:'© OpenStreetMap'});L.control.layers({'🛰️ Satélite':sat,'🗺️ Calles':streets}).addTo(map);drawGroup=new L.FeatureGroup().addTo(map);map.addControl(new L.Control.Draw({edit:{featureGroup:drawGroup},draw:{polyline:false,circle:false,circlemarker:false,marker:false,polygon:true,rectangle:true}}));map.on(L.Draw.Event.CREATED,e=>{drawGroup.clearLayers();drawnLayer=e.layer;drawGroup.addLayer(drawnLayer);map.fitBounds(drawnLayer.getBounds(),{padding:[20,20]})});map.on(L.Draw.Event.EDITED,e=>e.layers.eachLayer(l=>drawnLayer=l));map.on(L.Draw.Event.DELETED,()=>drawnLayer=null)}
+function newSector(){editingId=null;$('sectorName').value='';$('sectorDesc').value='';$('sectorPhoto').value='';$('sectorPhotoPreview').innerHTML='';$('editorTitle').textContent='Nuevo sector';showOnly('sectorEditView');initEditorMap();setTimeout(()=>{drawGroup.clearLayers();drawnLayer=null;map.setView([8.9824,-79.5199],13)},80)}
+function editSector(id){let s=sectorData.find(x=>x.id===id);if(!s)return;editingId=id;$('sectorName').value=s.nombre;$('sectorDesc').value=s.descripcion||'';$('sectorPhoto').value='';$('sectorPhotoPreview').innerHTML=s.imagen_url?`<img class="sector-photo" style="max-width:320px" src="${esc(s.imagen_url)}">`:'';$('editorTitle').textContent='Editar sector';showOnly('sectorEditView');initEditorMap();setTimeout(()=>{drawGroup.clearLayers();drawnLayer=null;if(s.area_geojson){drawnLayer=L.geoJSON(s.area_geojson).getLayers()[0];drawGroup.addLayer(drawnLayer);map.fitBounds(drawnLayer.getBounds(),{padding:[20,20]})}},80)}
+function clearArea(){drawGroup?.clearLayers();drawnLayer=null}async function uploadSectorPhoto(sectorId){
+ let f=$('sectorPhoto').files[0]; if(!f)return null;
+ let ext=(f.name.split('.').pop()||'jpg').toLowerCase(), path=`${sectorId}/portada-${Date.now()}.${ext}`;
+ let {error}=await sb.storage.from('sectores').upload(path,f,{upsert:false,contentType:f.type||undefined});
+ if(error)throw error;
+ return sb.storage.from('sectores').getPublicUrl(path).data.publicUrl;
+}
+async function saveSector(){
+ if(!$('sectorName').value.trim())return alert('Indicá el nombre.');
+ if(!drawnLayer)return alert('Dibujá el área en el mapa.');
+ let geo=drawnLayer.toGeoJSON().geometry,c=drawnLayer.getBounds().getCenter();
+ let payload={nombre:$('sectorName').value.trim(),descripcion:$('sectorDesc').value.trim(),area_geojson:geo,centro_lat:c.lat,centro_lng:c.lng};
+ let id=editingId;
+ if(!id){
+   let {data,error}=await sb.from('sectores').insert(payload).select().single();
+   if(error)return alert(error.message); id=data.id;
+ }else{
+   let {error}=await sb.from('sectores').update(payload).eq('id',id);
+   if(error)return alert(error.message);
+ }
+ try{
+   let photo=await uploadSectorPhoto(id);
+   if(photo){let {error}=await sb.from('sectores').update({imagen_url:photo}).eq('id',id);if(error)throw error;}
+ }catch(e){return alert('El sector se guardó, pero la foto no pudo subirse: '+e.message)}
+ alert('Sector guardado correctamente.');await loadSectors();backToSectors()
+}
+
+async function loadSectorReportSummaries(){
+ if(!sectorData.length)return;
+ let sectorIds=sectorData.map(x=>x.id);
+ let {data:els,error:ee}=await sb.from('elementos').select('id,sector_id').in('sector_id',sectorIds);
+ if(ee){console.error(ee);return}
+ let elementIds=(els||[]).map(x=>x.id),byElement={};
+ (els||[]).forEach(e=>byElement[e.id]=e.sector_id);
+ let reports=[];
+ if(elementIds.length){
+   let {data,error}=await sb.from('reportes').select('id,elemento_id,estado').in('elemento_id',elementIds);
+   if(error){console.error(error);return}
+   reports=data||[];
+ }
+ sectorData.forEach(sec=>sec._reports={total:0,open:0,done:0});
+ reports.forEach(r=>{
+   let sid=byElement[r.elemento_id],sec=sectorData.find(x=>x.id===sid);if(!sec)return;
+   sec._reports.total++;
+   if(r.estado==='resuelto')sec._reports.done++;else sec._reports.open++;
+ });
+}
+function sectorReportSummary(sec){
+ let r=sec._reports||{total:0,open:0,done:0};
+ return `<div class="report-summary"><span class="summary-pill summary-open">Pendientes: ${r.open}</span><span class="summary-pill summary-done">Resueltos: ${r.done}</span><span class="summary-pill summary-total">Total: ${r.total}</span></div>`;
+}
+function openDeleteSector(id){
+ let x=sectorData.find(s=>s.id===id);if(!x)return;
+ deleteSectorId=id;$('deleteConfirm').value='';$('deleteSectorTitle').textContent='Eliminar '+x.nombre;$('deleteSectorDlg').showModal();
+}
+async function deleteSectorNow(){
+ if($('deleteConfirm').value.trim()!=='ELIMINAR')return alert('Escribí ELIMINAR exactamente para confirmar.');
+ let id=deleteSectorId;
+ let {data:objs,error:listErr}=await sb.storage.from('sectores').list(id,{limit:100});
+ if(!listErr&&objs?.length){let paths=objs.map(o=>`${id}/${o.name}`);await sb.storage.from('sectores').remove(paths)}
+ let {error}=await sb.from('sectores').delete().eq('id',id);
+ if(error)return alert('No se pudo eliminar: '+error.message);
+ $('deleteSectorDlg').close();deleteSectorId=null;await loadSectors();alert('Sector eliminado.');
+}
+function backToSectors(){showOnly('sectorListView');if(sectorMap){sectorMap.remove();sectorMap=null}}
+async function manageSector(id){
+ let sec=sectorData.find(x=>x.id===id);if(!sec)return;currentSectorId=id;$('manageName').textContent=sec.nombre;showOnly('sectorManageView');
+ setTimeout(async()=>{if(sectorMap)sectorMap.remove();sectorMap=L.map('sectorMap',{maxZoom:21});L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxNativeZoom:19,maxZoom:21,attribution:'Imagery © Esri'}).addTo(sectorMap);let area=L.geoJSON(sec.area_geojson,{style:{weight:2,fillOpacity:.06}}).addTo(sectorMap);sectorMap.fitBounds(area.getBounds(),{padding:[18,18]});await loadElements();await loadActivity()},80)
+}
+function markerIcon(e,reportCount=0){let inside=e.foto_url?`<img src="${esc(e.foto_url)}">`:'✨';return L.divIcon({className:'',html:`<div class="map-marker"><div class="marker-clip">${inside}</div>${mapReportBadge(reportCount)}</div>`,iconSize:[52,52],iconAnchor:[26,26]})}
+function mapReportBadge(count){return count?`<span class="map-report-badge">${count}</span>`:''}
+async function unresolvedReportCounts(){
+ let ids=elements.map(e=>e.id),counts={};
+ if(!ids.length)return counts;
+ let {data,error}=await sb.from('reportes').select('elemento_id,estado').in('elemento_id',ids);
+ if(error){console.error(error);return counts}
+ (data||[]).forEach(r=>{if(r.estado!=='resuelto')counts[r.elemento_id]=(counts[r.elemento_id]||0)+1});
+ return counts;
+}
+async function loadElements(){
+ let {data,error}=await sb.from('elementos').select('*').eq('sector_id',currentSectorId).order('orden').order('nombre');if(error)return alert(error.message);elements=data||[];
+ elementMarkers.forEach(m=>m.remove());elementMarkers=[];
+ let reportCounts=await unresolvedReportCounts();
+ elements.forEach(e=>{let m=L.marker([e.lat,e.lng],{icon:markerIcon(e,reportCounts[e.id]||0)}).addTo(sectorMap).bindPopup(`<b>${esc(e.nombre)}</b><br>${esc(e.descripcion||'')}`);elementMarkers.push(m)});
+ $('elementList').innerHTML=elements.length?elements.map(e=>`<div class="element-card">${e.foto_url?`<img class="element-photo" src="${esc(e.foto_url)}">`:''}<h3>${esc(e.nombre)}</h3>${reportCounts[e.id]?`<div class="element-alert">⚠ ${reportCounts[e.id]} ${reportCounts[e.id]===1?'reporte pendiente':'reportes pendientes'}</div>`:''}<p>${esc(e.descripcion||'Sin descripción')}</p><div class="row"><button onclick="openElement('${e.id}')">Editar</button><button class="danger" onclick="openDeleteElement('${e.id}')">Eliminar</button></div></div>`).join(''):'<span class="muted">Todavía no hay elementos.</span>';
+}
+function openElement(id=null){
+ editingElementId=id;pendingElementLatLng=null;let e=id?elements.find(x=>x.id===id):null;
+ $('elementDlgTitle').textContent=e?'Editar elemento':'Agregar elemento';$('elementName').value=e?.nombre||'';$('elementCode').value=e?.codigo||'';$('elementDesc').value=e?.descripcion||'';$('elementPhoto').value='';$('elementPhotoPreview').innerHTML=e?.foto_url?`<img class="element-photo" style="max-width:320px" src="${esc(e.foto_url)}">`:'';
+ if(e)pendingElementLatLng=L.latLng(e.lat,e.lng);$('elementDlg').showModal()
+}
+function chooseElementLocation(){
+ $('elementDlg').close();alert('Hacé clic en el mapa donde está ubicada la decoración.');
+ sectorMap.once('click',ev=>{pendingElementLatLng=ev.latlng;L.popup().setLatLng(ev.latlng).setContent('Ubicación seleccionada ✓').openOn(sectorMap);setTimeout(()=>$('elementDlg').showModal(),250)})
+}
+async function uploadElementPhoto(id){
+ let f=$('elementPhoto').files[0];if(!f)return null;let ext=(f.name.split('.').pop()||'jpg').toLowerCase(),path=`${currentSectorId}/${id}/foto-${Date.now()}.${ext}`;
+ let {error}=await sb.storage.from('elementos').upload(path,f,{contentType:f.type||undefined});if(error)throw error;return sb.storage.from('elementos').getPublicUrl(path).data.publicUrl
+}
+async function saveElement(){
+ if(!$('elementName').value.trim())return alert('Indicá el nombre.');if(!pendingElementLatLng)return alert('Elegí la ubicación en el mapa.');
+ let payload={sector_id:currentSectorId,nombre:$('elementName').value.trim(),codigo:$('elementCode').value.trim()||null,descripcion:$('elementDesc').value.trim(),lat:pendingElementLatLng.lat,lng:pendingElementLatLng.lng};
+ let id=editingElementId;
+ if(id){let {error}=await sb.from('elementos').update(payload).eq('id',id);if(error)return alert(error.message)}
+ else{let {data,error}=await sb.from('elementos').insert(payload).select().single();if(error)return alert(error.message);id=data.id}
+ try{let photo=await uploadElementPhoto(id);if(photo){let {error}=await sb.from('elementos').update({foto_url:photo}).eq('id',id);if(error)throw error}}catch(e){return alert('Elemento guardado, pero la foto falló: '+e.message)}
+ $('elementDlg').close();await loadElements();alert('Elemento guardado correctamente.')
+}
+function openDeleteElement(id){let e=elements.find(x=>x.id===id);if(!e)return;deleteElementId=id;$('deleteElementConfirm').value='';$('deleteElementTitle').textContent='Eliminar '+e.nombre;$('deleteElementDlg').showModal()}
+async function deleteElementNow(){
+ if($('deleteElementConfirm').value.trim()!=='ELIMINAR')return alert('Escribí ELIMINAR exactamente.');
+ let e=elements.find(x=>x.id===deleteElementId),prefix=`${currentSectorId}/${deleteElementId}`;
+ let {data:objs}=await sb.storage.from('elementos').list(prefix,{limit:100});if(objs?.length)await sb.storage.from('elementos').remove(objs.map(o=>`${prefix}/${o.name}`));
+ let {error}=await sb.from('elementos').delete().eq('id',deleteElementId);if(error)return alert(error.message);$('deleteElementDlg').close();await loadElements();alert('Elemento eliminado.')
+}
+async function loadActivity(){
+ let ids=elements.map(e=>e.id);
+ if(!ids.length){$('ratingsBox').innerHTML='Sin valoraciones.';$('commentsBox').innerHTML='Sin comentarios.';$('reportsBox').innerHTML='Sin reportes.';$('openReportsBadge').textContent='0';$('openReportsBadge').classList.add('hide');return}
+ let [{data:vs,error:ve},{data:cs,error:ce},{data:rs,error:re}]=await Promise.all([
+   sb.from('valoraciones').select('*,elementos(nombre)').in('elemento_id',ids).order('creado_en',{ascending:false}),
+   sb.from('comentarios').select('*,elementos(nombre)').in('elemento_id',ids).order('creado_en',{ascending:false}),
+   sb.from('reportes').select('*,elementos(nombre)').in('elemento_id',ids).order('creado_en',{ascending:false})
+ ]);
+ if(ve||ce||re){console.error(ve||ce||re);return};
+ let openCount=(rs||[]).filter(r=>r.estado!=='resuelto').length;
+ $('openReportsBadge').textContent=openCount;
+ $('openReportsBadge').classList.toggle('hide',openCount===0)
+ $('ratingsBox').innerHTML=vs?.length?vs.map(v=>`<div class="rating"><b>${esc(v.elementos?.nombre||'Elemento')}</b><div class="rating-stars">${'★'.repeat(v.estrellas)}${'☆'.repeat(5-v.estrellas)}</div><button class="danger" onclick="deleteRating('${v.id}')">Eliminar valoración</button></div>`).join(''):'Sin valoraciones.';
+ $('commentsBox').innerHTML=cs?.length?cs.map(c=>`<div class="comment"><b>${esc(c.elementos?.nombre||'Elemento')}</b><p>${esc(c.comentario)}</p><div class="row">${c.aprobado?'<span class="muted">✓ Aprobado</span>':`<button onclick="approveComment('${c.id}')">Aprobar</button>`}<button class="danger" onclick="deleteComment('${c.id}')">Eliminar comentario</button></div></div>`).join(''):'Sin comentarios.';
+ $('reportsBox').innerHTML=rs?.length?rs.map(r=>`<div class="report"><b>${esc(r.elementos?.nombre)}</b> · ${esc(({no_funciona:'Funcionamiento · No funciona',dano_fisico:'Daño físico',vandalismo:'Vandalismo',suciedad:'Suciedad / mantenimiento',otro:'Otro'})[r.tipo]||r.tipo)} · <b>${esc(r.estado)}</b><p>${esc(r.descripcion||'Sin descripción')}</p><div class="row">${r.estado!=='resuelto'?`<button onclick="resolveReport('${r.id}')">Marcar resuelto</button>`:''}<button class="danger" onclick="deleteReport('${r.id}')">Eliminar reporte</button></div></div>`).join(''):'Sin reportes.'
+}
+async function deleteRating(id){
+ if(!confirm('¿Eliminar esta valoración? Esta acción no se puede deshacer.'))return;
+ let {error}=await sb.from('valoraciones').delete().eq('id',id);
+ if(error)return alert('No se pudo eliminar la valoración: '+error.message);
+ await loadActivity();
+}
+async function approveComment(id){let {error}=await sb.from('comentarios').update({aprobado:true}).eq('id',id);if(error)return alert(error.message);loadActivity()}
+async function deleteComment(id){
+ if(!confirm('¿Eliminar este comentario? Esta acción no se puede deshacer.'))return;
+ let {error}=await sb.from('comentarios').delete().eq('id',id);
+ if(error)return alert('No se pudo eliminar el comentario: '+error.message);
+ await loadActivity();
+}
+async function deleteReport(id){
+ if(!confirm('¿Eliminar este reporte? Esta acción no se puede deshacer.'))return;
+ let {data:r,error:readError}=await sb.from('reportes').select('foto_url').eq('id',id).single();
+ if(readError)return alert('No se pudo leer el reporte: '+readError.message);
+ if(r?.foto_url){
+   let path=r.foto_url;
+   if(path.includes('/storage/v1/object/public/reportes/'))path=decodeURIComponent(path.split('/storage/v1/object/public/reportes/')[1]);
+   if(path && !path.startsWith('http'))await sb.storage.from('reportes').remove([path]);
+ }
+ let {error}=await sb.from('reportes').delete().eq('id',id);
+ if(error)return alert('No se pudo eliminar el reporte: '+error.message);
+ await loadActivity();
+ await loadSectorReportSummaries();
+ await loadElements();
+ alert('Reporte eliminado.');
+}
+async function resolveReport(id){let {error}=await sb.from('reportes').update({estado:'resuelto',resuelto_en:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);await loadActivity();await loadSectorReportSummaries();await loadElements()}
+
+async function openHeaderConfig(){
+ let {data,error}=await sb.from('configuracion').select('*').eq('id',1).single();
+ if(error)return alert('No se pudo cargar la configuración: '+error.message);
+ $('headerTitle').value=data?.titulo||'Decoraciones Navidad PTY 2026';
+ $('headerSubtitle').value=data?.subtitulo||'Explorá nuestros espacios y compartí tu experiencia.';
+ $('headerLogo').value='';
+ $('headerLogoPreview').innerHTML=data?.logo_url?`<img src="${esc(data.logo_url)}" style="max-height:90px;max-width:280px;object-fit:contain;background:#eee;border-radius:8px;padding:5px">`:'';
+ $('headerDlg').showModal();
+}
+async function saveHeaderConfig(){
+ let payload={titulo:$('headerTitle').value.trim()||'Decoraciones Navidad PTY 2026',subtitulo:$('headerSubtitle').value.trim()};
+ let f=$('headerLogo').files[0];
+ if(f){
+   let ext=(f.name.split('.').pop()||'png').toLowerCase(),path=`logo-${Date.now()}.${ext}`;
+   let {error}=await sb.storage.from('sectores').upload(`config/${path}`,f,{contentType:f.type||undefined});
+   if(error)return alert('No se pudo subir el logo: '+error.message);
+   payload.logo_url=sb.storage.from('sectores').getPublicUrl(`config/${path}`).data.publicUrl;
+ }
+ let {error}=await sb.from('configuracion').update(payload).eq('id',1);
+ if(error)return alert('No se pudo guardar el encabezado: '+error.message);
+ $('headerDlg').close();alert('Encabezado actualizado correctamente.');
+}
+boot();
+</script></body></html>
