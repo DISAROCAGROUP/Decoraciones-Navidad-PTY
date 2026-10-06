@@ -33,18 +33,32 @@ button{border:0;border-radius:9px;padding:9px 12px;background:#32174d;color:#fff
  .sector-nav-photo{width:36px;height:36px;flex-basis:36px}
  .sector-nav-name{font-size:11px;max-width:115px;white-space:normal}
 }
+
+.access-modal{border:0;border-radius:16px;padding:0;width:min(430px,92%);box-shadow:0 15px 45px #0007}
+.access-modal::backdrop{background:#0008}.access-pad{padding:22px}.access-pad h2{margin:0 0 8px;color:#32174d}
+.access-code{font-family:'Montserrat',system-ui,sans-serif;text-transform:uppercase;letter-spacing:1.2px;font-weight:700}
+.access-error{min-height:20px;margin:0 0 10px;color:#b42323;font-size:13px;font-weight:650}
+.access-actions{display:flex;gap:8px;flex-wrap:wrap}.access-actions .gray{background:#68736d}
+
 </style></head><body>
 <header><img id="logo" class="hide"><div><h1 id="title">Decoraciones Navidad PTY 2026</h1><p id="subtitle">Explorá nuestros espacios y compartí tu experiencia.</p></div></header>
 <div id="sectorNav" class="sector-nav hide"></div><div id="sectorBar" class="topbar hide"><button onclick="showGeneral()">← Sectores</button><b id="sectorTitle"></b></div><div id="map"></div>
+<dialog id="accessDlg" class="access-modal"><div class="access-pad">
+<h2 id="accessTitle">Acceso al sector</h2><p class="muted">Este sector requiere un código de acceso.</p>
+<label for="accessCode"><b>Código de acceso</b></label>
+<input id="accessCode" class="access-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="PTY-XXXX-XXXX">
+<p id="accessError" class="access-error"></p><div class="access-actions">
+<button id="accessSubmit" onclick="validateSectorAccess()">Ingresar al sector</button>
+<button class="gray" onclick="cancelSectorAccess()">Cancelar</button></div></div></dialog>
 <dialog id="elementDlg" class="modal"><div id="elementHero"></div><div class="pad"><h2 id="elementTitle"></h2><p id="elementDesc"></p><div id="ratingSummary" class="muted"></div>
 <h3>Tu valoración</h3><div id="stars" class="stars"></div><textarea id="commentText" rows="3" placeholder="Comentario opcional"></textarea><button onclick="saveRating()">Enviar valoración</button>
 <div id="comments" class="comments"></div><hr><h3>⚠️ Reportar problema</h3><select id="reportType"><option value="no_funciona">No funciona</option><option value="dano_fisico">Daño físico</option><option value="vandalismo">Vandalismo</option><option value="suciedad">Suciedad / mantenimiento</option><option value="otro">Otro</option></select><textarea id="reportDesc" rows="3" placeholder="Describí el problema"></textarea><label>Fotografía opcional</label><input id="reportPhoto" type="file" accept="image/*" capture="environment"><div class="row"><button onclick="sendReport()">Enviar reporte</button><button onclick="elementDlg.close()">Cerrar</button></div></div></dialog>
 <script>
 const sb=supabase.createClient("https://hntfbtviyxhigxjhbwhy.supabase.co","sb_publishable_FADYkI8IP23NMUYEY96pLA_IfHWVTZ6",{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
-let map,sectors=[],sectorLayers=[],elementMarkers=[],sectorMarkerById={},sectorAreaById={},currentSector=null,currentElement=null,currentElements=[],rating=0;
+let map,sectors=[],sectorLayers=[],elementMarkers=[],sectorMarkerById={},sectorAreaById={},currentSector=null,currentElement=null,currentElements=[],rating=0,pendingSector=null,validatingAccess=false;
 const $=x=>document.getElementById(x);function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function initMap(){map=L.map('map',{maxZoom:21}).setView([8.9824,-79.5199],12);let sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxNativeZoom:19,maxZoom:21,attribution:'Imagery © Esri'}).addTo(map);let streets=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:21,attribution:'© OpenStreetMap'});L.control.layers({'🛰️ Satélite':sat,'🗺️ Calles':streets}).addTo(map)}
-async function boot(){initMap();let {data:c}=await sb.from('configuracion').select('*').eq('id',1).single();if(c){$('title').textContent=c.titulo||'Decoraciones Navidad PTY 2026';$('subtitle').textContent=c.subtitulo||'';if(c.logo_url){$('logo').src=c.logo_url;$('logo').classList.remove('hide')}}let {data,error}=await sb.from('sectores').select('*').eq('activo',true).order('orden').order('nombre');if(error)return alert(error.message);sectors=data||[];showGeneral()}
+async function boot(){initMap();let {data:c}=await sb.from('configuracion').select('*').eq('id',1).single();if(c){$('title').textContent=c.titulo||'Decoraciones Navidad PTY 2026';$('subtitle').textContent=c.subtitulo||'';if(c.logo_url){$('logo').src=c.logo_url;$('logo').classList.remove('hide')}}let {data,error}=await sb.from('sectores').select('id,nombre,descripcion,imagen_url,area_geojson,centro_lat,centro_lng,activo,orden').eq('activo',true).order('orden').order('nombre');if(error)return alert(error.message);sectors=data||[];showGeneral()}
 function clearMap(){sectorLayers.forEach(x=>x.remove());sectorLayers=[];elementMarkers.forEach(x=>x.remove());elementMarkers=[];sectorMarkerById={};sectorAreaById={}}
 function sectorIcon(s){let photo=s.imagen_url?`<img src="${esc(s.imagen_url)}">`:`<div class="fallback">📍</div>`;return L.divIcon({className:'',html:`<div class="sector-pin" data-sector="${s.id}"><div class="pin-shell"></div><div class="pin-photo">${photo}</div><div class="sector-label">${esc(s.nombre)}</div></div>`,iconSize:[37,70],iconAnchor:[19,47]})}
 function navPhoto(s){return s.imagen_url?`<img class="sector-nav-photo" src="${esc(s.imagen_url)}" alt="">`:`<div class="sector-nav-photo" style="display:grid;place-items:center">📍</div>`}
@@ -75,10 +89,28 @@ function showGeneral(){
  });
  if(bounds.length){let all=bounds[0];for(let i=1;i<bounds.length;i++)all.extend(bounds[i]);map.fitBounds(all,{padding:[55,55],maxZoom:15})}
 }
-async function openSector(id){
- let s=sectors.find(x=>x.id===id);if(!s)return;currentSector=s;clearMap();$('sectorNav').classList.add('hide');$('sectorTitle').textContent=s.nombre;$('sectorBar').classList.remove('hide');
+function openSector(id){
+ let s=sectors.find(x=>x.id===id);if(!s)return;
+ pendingSector=s;$('accessTitle').textContent='Acceso a '+s.nombre;$('accessCode').value='';$('accessError').textContent='';
+ $('accessSubmit').disabled=false;$('accessSubmit').textContent='Ingresar al sector';$('accessDlg').showModal();
+ setTimeout(()=>$('accessCode').focus(),80);
+}
+function cancelSectorAccess(){pendingSector=null;$('accessCode').value='';$('accessError').textContent='';$('accessDlg').close()}
+async function validateSectorAccess(){
+ if(validatingAccess||!pendingSector)return;
+ let code=$('accessCode').value.trim().toUpperCase();
+ if(!code){$('accessError').textContent='Ingresá el código de acceso.';$('accessCode').focus();return}
+ validatingAccess=true;$('accessSubmit').disabled=true;$('accessSubmit').textContent='Verificando...';$('accessError').textContent='';
+ let {data,error}=await sb.rpc('validar_acceso_sector',{p_sector_id:pendingSector.id,p_codigo:code});
+ validatingAccess=false;$('accessSubmit').disabled=false;$('accessSubmit').textContent='Ingresar al sector';
+ if(error){console.error(error);$('accessError').textContent='No fue posible validar el acceso. Intentá nuevamente.';return}
+ if(data!==true){$('accessError').textContent='Código incorrecto. Verificá el código e intentá nuevamente.';$('accessCode').select();return}
+ let s=pendingSector;pendingSector=null;$('accessDlg').close();await enterSector(s);
+}
+async function enterSector(s){
+ currentSector=s;clearMap();$('sectorNav').classList.add('hide');$('sectorTitle').textContent=s.nombre;$('sectorBar').classList.remove('hide');
  let area=L.geoJSON(s.area_geojson);map.fitBounds(area.getBounds(),{padding:[30,30]});
- let {data,error}=await sb.from('elementos').select('*').eq('sector_id',id).eq('activo',true).order('orden').order('nombre');if(error)return alert(error.message);
+ let {data,error}=await sb.from('elementos').select('*').eq('sector_id',s.id).eq('activo',true).order('orden').order('nombre');if(error)return alert(error.message);
  currentElements=data||[];
  currentElements.forEach(e=>{let inside=e.foto_url?`<img src="${esc(e.foto_url)}">`:'✨';let icon=L.divIcon({className:'',html:`<div class="element-pin"><div class="element-clip">${inside}</div></div>`,iconSize:[52,52],iconAnchor:[26,26]});elementMarkers.push(L.marker([e.lat,e.lng],{icon}).addTo(map).on('click',()=>openElement(e.id)))})
 }
@@ -87,5 +119,7 @@ function renderStars(){ $('stars').innerHTML=[1,2,3,4,5].map(n=>`<button class="
 async function loadElementSocial(){let id=currentElement.id;let [{data:v},{data:c}]=await Promise.all([sb.from('valoraciones').select('estrellas').eq('elemento_id',id),sb.from('comentarios').select('*').eq('elemento_id',id).eq('aprobado',true).order('creado_en',{ascending:false})]);let avg=v?.length?(v.reduce((a,x)=>a+x.estrellas,0)/v.length).toFixed(1):'—';$('ratingSummary').textContent=v?.length?`⭐ ${avg} (${v.length} valoraciones)`:'Sin valoraciones todavía';$('comments').innerHTML=c?.length?'<h3>Comentarios</h3>'+c.map(x=>`<div class="comment">${esc(x.comentario)}</div>`).join(''):''}
 async function saveRating(){let c=$('commentText').value.trim();if(!rating&&!c)return alert('Elegí estrellas o escribí un comentario.');if(rating){let {error}=await sb.from('valoraciones').insert({elemento_id:currentElement.id,estrellas:rating});if(error)return alert('No se pudo guardar la valoración: '+error.message)}if(c){let {error}=await sb.from('comentarios').insert({elemento_id:currentElement.id,comentario:c,aprobado:false});if(error)return alert('La valoración se guardó, pero el comentario no: '+error.message)}alert('¡Gracias!');$('commentText').value='';rating=0;renderStars();loadElementSocial()}
 async function sendReport(){let desc=$('reportDesc').value.trim(),file=$('reportPhoto').files[0],path=null;if(!desc&&!file)return alert('Describí el problema o adjuntá una fotografía.');if(file){let ext=(file.name.split('.').pop()||'jpg').toLowerCase();path=`${currentElement.id}/${crypto.randomUUID()}.${ext}`;let {error}=await sb.storage.from('reportes').upload(path,file,{contentType:file.type||undefined});if(error)return alert('No se pudo subir la foto: '+error.message)}let {error}=await sb.from('reportes').insert({elemento_id:currentElement.id,tipo:$('reportType').value,descripcion:desc||null,foto_url:path,estado:'pendiente'});if(error)return alert('No se pudo enviar el reporte: '+error.message);alert('Reporte enviado. Gracias por ayudarnos a cuidar las decoraciones.');$('reportDesc').value='';$('reportPhoto').value=''}
+$('accessCode').addEventListener('input',()=>{$('accessCode').value=$('accessCode').value.toUpperCase();$('accessError').textContent=''});
+$('accessCode').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();validateSectorAccess()}});
 boot();
 </script></body></html>
